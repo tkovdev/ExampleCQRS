@@ -13,18 +13,18 @@ public class CheckoutBookCommand : ICommand
 
 public class CheckoutBookHandler : ICommandHandler<CheckoutBookCommand>
 {
-    private readonly IDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public CheckoutBookHandler(IDbContext context)
+    public CheckoutBookHandler(ApplicationDbContext context)
     {
         _context = context;
     }
 
     public async Task Handle(CheckoutBookCommand command, CancellationToken cancellationToken)
     {
-        var book = await _context.Context.Books
+        var book = await _context.Books
             .FirstOrDefaultAsync(x => x.Id == command.BookId, cancellationToken);
-        var patron = await _context.Context.Patrons
+        var patron = await _context.Patrons
             .Include(p => p.CheckedBooks)
             .FirstOrDefaultAsync(x => x.Id == command.PatronId, cancellationToken);
 
@@ -41,6 +41,6 @@ public class CheckoutBookHandler : ICommandHandler<CheckoutBookCommand>
             CheckoutDate = DateTimeOffset.UtcNow
         });
         
-        await _context.Context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }
