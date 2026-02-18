@@ -2,7 +2,6 @@ using CQRS.Commands.Books;
 using CQRS.DataAccess.Interfaces;
 using CQRS.Queries.Books;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
 
 namespace CQRS.API.Controllers;
 
@@ -27,7 +26,7 @@ public class BooksController : ControllerBase
     }
 
     [HttpPost("checkout/{patronId}/{bookId}")]
-    public async Task<IActionResult> CheckoutBook([FromRoute] ObjectId patronId, [FromRoute] ObjectId bookId)
+    public async Task<IActionResult> CheckoutBook([FromRoute] int patronId, [FromRoute] int bookId)
     {
         await _mediator.Send(new CheckoutBookCommand(){BookId = bookId, PatronId = patronId});
         return StatusCode(StatusCodes.Status200OK);

@@ -1,31 +1,19 @@
-using Microsoft.Extensions.Configuration;
-using MongoDB.Driver;
-
 namespace CQRS.Data.DAL;
 
-/**
- * <summary>
- * MongoDb is a concrete class and implements IMongoDb. In most cases, this concrete class will be used for the MongoClient &amp; Database Connection.
- * </summary>
- */
-public class MongoDb : IMongoDb
+/// <summary>
+/// DbContextWrapper is a concrete class and implements IDbContext. 
+/// This provides access to the Entity Framework DbContext.
+/// </summary>
+public class DbContextWrapper : IDbContext
 {
-    /**
-     * <inheritdoc/>
-     */
-    public IMongoClient Client { get; }
-    /**
-     * <inheritdoc/>
-     */
-    public IMongoDatabase Database { get; }
+    /// <inheritdoc/>
+    public ApplicationDbContext Context { get; }
 
-    /**
-     * <summary>A MongoDb instance contains a Client and a Database. When instantiated, this object will use appsettings to connect to the database.</summary>
-     */
-    public MongoDb(IConfiguration configuration)
+    /// <summary>
+    /// A DbContextWrapper instance contains the ApplicationDbContext for database operations.
+    /// </summary>
+    public DbContextWrapper(ApplicationDbContext context)
     {
-        var mongoClientSettings = MongoClientSettings.FromConnectionString(configuration.GetConnectionString("MongoDb"));
-        Client = new MongoClient(mongoClientSettings);
-        Database = Client.GetDatabase(configuration.GetValue<string>("DatabaseName"));
+        Context = context;
     }
 }

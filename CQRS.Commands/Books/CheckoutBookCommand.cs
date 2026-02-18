@@ -1,38 +1,34 @@
 using CQRS.Data.DAL;
 using CQRS.Data.Models;
 using CQRS.DataAccess.Interfaces;
-using MongoDB.Bson;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 
 namespace CQRS.Commands.Books;
 
 public class CheckoutBookCommand : ICommand
 {
-    public ObjectId PatronId { get; set; }
-    public ObjectId BookId { get; set; }
+    public int PatronId { get; set; }
+    public int BookId { get; set; }
 }
 
 public class CheckoutBookHandler : ICommandHandler<CheckoutBookCommand>
 {
-    private readonly IMongoDb _context;
-    private IMongoCollection<Book> BooksCollection { get; }
-    private IMongoCollection<Patron> PatronsCollection { get; }
+    private readonly IDbContext _context;
 
-    public CheckoutBookHandler(IMongoDb context)
+    public CheckoutBookHandler(IDbContext context)
     {
         _context = context;
-        BooksCollection = _context.Database.GetCollection<Book>("Books");
-        PatronsCollection = _context.Database.GetCollection<Patron>("Patrons");
     }
 
     public async Task Handle(CheckoutBookCommand command, CancellationToken cancellationToken)
     {
-        var patrons = await PatronsCollection.FindAsync<Patron>(x => x.Id.Equals(command.PatronId), default, cancellationToken);
-        var books = await BooksCollection.FindAsync<Book>(x => x.Id.Equals(command.BookId), default, cancellationToken);
+        var book = await _context.Context.Books
+            .FirstOrDefaultAsync(x => x.Id == command.BookId, cancellationToken);
+        var patron = await _context.Context.Patrons
+            .Include(p => p.CheckedBooks)
+            .FirstOrDefaultAsync(x => x.Id == command.PatronId, cancellationToken);
 
-        var book = await books.FirstOrDefaultAsync(cancellationToken);
         if(book is null) throw new Exception("Book not found");
-        var patron = await patrons.FirstOrDefaultAsync(cancellationToken);
         if(patron is null) throw new Exception("Patron not found");
         
         book.NumberAvailable = book.NumberAvailable - 1;
@@ -45,7 +41,6 @@ public class CheckoutBookHandler : ICommandHandler<CheckoutBookCommand>
             CheckoutDate = DateTimeOffset.UtcNow
         });
         
-        await BooksCollection.ReplaceOneAsync(x => x.Id.Equals(book.Id), book, cancellationToken: cancellationToken);
-        await PatronsCollection.ReplaceOneAsync(x => x.Id.Equals(patron.Id), patron, cancellationToken: cancellationToken);
+        await _context.Context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,12 +1,17 @@
 using CQRS.Data.DAL;
 using CQRS.DataAccess;
 using CQRS.DataAccess.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddScoped<IMongoDb, MongoDb>();
+// Configure Entity Framework Core with SQL Server
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IDbContext, DbContextWrapper>();
 builder.Services.AddScoped<IMediator, Mediator>();
 
 MediatorHandler.RegisterHandlers(builder.Services);
